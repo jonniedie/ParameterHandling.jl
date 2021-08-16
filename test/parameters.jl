@@ -4,7 +4,6 @@ mvnormal(args...) = MvNormal(args...)
 pdiagmat(args...) = PDiagMat(args...)
 
 @testset "parameters" begin
-
     @testset "postive" begin
         @testset "$val" for val in [5.0, 0.001f0, 1.0e-7]
             p = positive(val)
@@ -41,9 +40,7 @@ pdiagmat(args...) = PDiagMat(args...)
         test_parameter_interface(deferred(sin, positive(0.5)); check_inferred=tuple_infers)
         test_parameter_interface(
             deferred(
-                mvnormal,
-                fixed(randn(5)),
-                deferred(pdiagmat, positive.(rand(5) .+ 1e-1)),
+                mvnormal, fixed(randn(5)), deferred(pdiagmat, positive.(rand(5) .+ 1e-1))
             );
             check_inferred=tuple_infers,
         )
@@ -79,13 +76,12 @@ pdiagmat(args...) = PDiagMat(args...)
 
     # This is more of a worked example.
     @testset "Integration" begin
-
         θ0 = (a=5.0, b=4.0)
         flat_parameters, unflatten = flatten(θ0)
 
         results = Optim.optimize(
             θ -> objective_function(unflatten, θ),
-            θ->only(Zygote.gradient(θ -> objective_function(unflatten, θ), θ)),
+            θ -> only(Zygote.gradient(θ -> objective_function(unflatten, θ), θ)),
             flat_parameters,
             BFGS(),
             Optim.Options();
@@ -97,13 +93,12 @@ pdiagmat(args...) = PDiagMat(args...)
     end
 
     @testset "Other Integration" begin
-
         θ0 = (a=5.0, b=fixed(4.0))
         flat_parameters, unflatten = flatten(θ0)
 
         results = Optim.optimize(
             θ -> objective_function(unflatten, θ),
-            θ->only(Zygote.gradient(θ -> objective_function(unflatten, θ), θ)),
+            θ -> only(Zygote.gradient(θ -> objective_function(unflatten, θ), θ)),
             flat_parameters,
             BFGS(),
             Optim.Options();
@@ -120,13 +115,12 @@ pdiagmat(args...) = PDiagMat(args...)
     end
 
     @testset "Normal" begin
-
         θ0 = deferred(Normal, randn(), positive(1.0))
         flat_parameters, unflatten = flatten(θ0)
 
         results = Optim.optimize(
             θ -> other_objective_function(unflatten, θ),
-            θ->only(Zygote.gradient(θ -> other_objective_function(unflatten, θ), θ)),
+            θ -> only(Zygote.gradient(θ -> other_objective_function(unflatten, θ), θ)),
             flat_parameters,
             BFGS(),
             Optim.Options();
@@ -134,6 +128,6 @@ pdiagmat(args...) = PDiagMat(args...)
         )
 
         # Check that it's successfully optimised.
-        @test mean(value(unflatten(results.minimizer))) ≈ 0 atol=1e-7
+        @test mean(value(unflatten(results.minimizer))) ≈ 0 atol = 1e-7
     end
 end
