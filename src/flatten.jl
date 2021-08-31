@@ -104,3 +104,39 @@ _cumsum(x) = cumsum(x)
 if VERSION < v"1.5"
     _cumsum(x::Tuple) = (_cumsum(collect(x))...,)
 end
+
+
+"""
+    flatten_only([eltype], x, group)
+    flatten_only([eltype], x, ::Val{group}) where {group}
+
+Returns a "flattened" representation of all values of `x` that are `Tagged` to be within the
+`group`. Wrapping `Symbol` `group` in a `Val` is recommended for type inference, but not required.
+
+```julia
+julia> x = (ones(3), Tagged{(:A,:B)}(5.0), (a=Tagged{:A}(5.0), b=Tagged{:B}([6.0, 2.1])));
+
+julia> v, unflatten = flatten_only(x, Val(:A));
+
+julia> v
+2-element Vector{Float64}:
+ 5.0
+ 5.0
+
+julia> ParameterHandling.value(unflatten(v))
+([1.0, 1.0, 1.0], 5.0, (a = 5.0, b = [6.0, 2.1]))
+
+julia> v, unflatten = flatten_only(x, Val(:B));
+
+julia> v
+3-element Vector{Float64}:
+ 5.0
+ 6.0
+ 2.1
+
+julia> ParameterHandling.value(unflatten(v))
+([1.0, 1.0, 1.0], 5.0, (a = 5.0, b = [6.0, 2.1]))
+```
+"""
+flatten_only(x, group) = flatten(remove_tags(x, group))
+flatten_only(T, x, group) = flatten(T, remove_tags(x, group))

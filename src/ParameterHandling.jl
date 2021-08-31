@@ -6,7 +6,7 @@ using ChainRulesCore
 using LinearAlgebra
 using SparseArrays
 
-export flatten, positive, bounded, fixed, deferred, orthogonal, positive_definite
+export Tagged, flatten, flatten_only, positive, bounded, fixed, deferred, orthogonal, positive_definite
 
 include("flatten.jl")
 include("parameters.jl")

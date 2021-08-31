@@ -243,3 +243,47 @@ function tril_to_vec(X::AbstractMatrix{T}) where {T}
     n == m || error("Matrix needs to be square")
     return X[tril!(trues(size(X)))]
 end
+
+"""
+    Tagged{Tags}(val)
+
+Allows values to be tagged for targeted flattening. To flatten only values tagged with a
+specified symbol, use `flatten_only` instead of `flatten`. `Tagged` values will participate
+in regular `flatten` as "unfixed" values that will be flattened into the flat `Vector`.
+"""
+struct Tagged{Tags, Eltype}
+    val::Eltype
+    Tagged{Tags}(val::Eltype) where {Tags, Eltype} = new{_to_tuple(Tags), Eltype}(val)
+end
+Tagged(val) = Tagged{()}(val) 
+
+tags(::Type{Tagged{Tags, Eltype}}) where {Tags, Eltype} = Tags
+tags(x) = tags(typeof(x))
+
+value(x::Tagged) = x.val
+
+_to_tuple(x) = (x,)
+_to_tuple(x::Tuple) = x
+
+flatten(::Type{T}, x::Tagged) where {T<:Real} = flatten(T, value(x))
+
+"""
+    remove_tags(x, group)
+    remove_tags(x, ::Val{group}) where {group}
+
+Recursively convert all values of a structure to `Fixed` except those `Tagged` in the desired
+`group`. `Tagged` values not in the `group` will be converted to plain (untagged) `Fixed` values.
+Wrapping `Symbol` `group` in a `Val` is recommended for type inference.
+
+```julia
+
+```
+"""
+remove_tags(x, _) = fixed(x)
+remove_tags(x::Dict, group) = Dict(key => remove_tags(val, group) for (key, val) in x)
+remove_tags(x::NamedTuple, group) = map(val -> remove_tags(val, group), x)
+remove_tags(x::Tuple, group) = map(val -> remove_tags(val, group), x)
+remove_tags(x::Tagged, group) = group in tags(x) ? value(x) : fixed(value(x))
+Base.@generated function remove_tags(x::Tagged, ::Val{group}) where {group}
+    return group in tags(x) ? :(value(x)) : :(fixed(value(x)))
+end

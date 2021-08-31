@@ -78,6 +78,53 @@ function test_flatten_interface(x::T; check_inferred::Bool=true) where {T}
     return nothing
 end
 
+function test_flatten_only_interface(x, group; check_inferred::Bool=true)
+    T = typeof(value(x))
+    @testset "flatten_only(x::$T, group)" begin
+        # Checks default eltype still works and ensure that
+        # basic functionality is implemented.
+        v, unflatten = flatten_only(x, group)
+        @test typeof(v) === Vector{Float64}
+        @test default_equality(value(x), value(unflatten(v)))
+        @test value(unflatten(v)) isa T
+
+        # Check that everything infers properly.
+        check_inferred && @inferred flatten_only(x, group)
+
+        # Test with different precisions
+        @testset "Float64" begin
+            _v, _unflatten = flatten_only(Float64, x, group)
+            @test typeof(_v) === Vector{Float64}
+            @test _v == v
+            @test default_equality(value(x), value(unflatten(_v)))
+            @test value(_unflatten(_v)) isa T
+
+            # Check that everything infers properly.
+            check_inferred && @inferred flatten_only(Float64, x, group)
+        end
+        @testset "Float32" begin
+            _v, _unflatten = flatten_only(Float32, x, group)
+            @test typeof(_v) === Vector{Float32}
+            @test default_equality(value(x), value(_unflatten(_v)); atol=1e-5)
+            @test value(_unflatten(_v)) isa T
+
+            # Check that everything infers properly.
+            check_inferred && @inferred flatten_only(Float32, x, group)
+        end
+        @testset "Float16" begin
+            _v, _unflatten = flatten_only(Float16, x, group)
+            @test typeof(_v) === Vector{Float16}
+            @test default_equality(value(x), value(_unflatten(_v)); atol=1e-2)
+            @test value(_unflatten(_v)) isa T
+
+            # Check that everything infers properly.
+            check_inferred && @inferred flatten_only(Float16, x, group)
+        end
+    end
+
+    return nothing
+end
+
 function test_parameter_interface(x; check_inferred::Bool=true)
 
     # Parameters need to be flatten-able.
